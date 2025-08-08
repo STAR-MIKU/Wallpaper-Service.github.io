@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>重返1999 | 相册</title>
+    <script src=".js/gsap.js"></script>
+    <style>
+        *{
+            padding: 0;
+            margin: 0;
+        }
+        
+        body, html
+        {
+            touch-action: none; /* 禁用浏览器默认的触摸滚动 */
+            overscroll-behavior: none;/* 防止滚动超出边界 */
+        }
+        
+        img
+        {
+            pointer-events: none;
+            user-select: none;
+        }
+        
+        div
+        {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+        }
+        
+        body
+        {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100vh;
+            background-color: #171717;
+            overflow: hidden;
+        }
+        
+        .photos
+        {
+            position: absolute;
+            flex-direction: column;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        
+        .photos_line
+        {
+            font-size: 1px;
+            height: 342em;
+            margin-bottom: 48em;
+            flex-shrink: 0;
+        }
+        
+        .photos_line_photo
+        {
+            font-size: 1px;
+            width: 234em;
+            height: 100%;
+            margin-right: 36em;
+            border-radius: 15em;
+            background-color: #17f700;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .photos_line_photo img
+        {
+            height: 100%;
+            transition: 0.2s ease;
+        }
+
+        .photos_line_photo:hover img
+        {
+            transform: scale(1.2);
+            pointer-events: none;/* 禁止图片缩放时响应点击事件 */
+        }
+
+        @media screen and (max-aspect-ratio: 1.5/1)
+        {
+            .photos_line,
+            .photos_line_photo
+            {
+                font-size: 2px;
+            }
+        }
+
+        @media screen and (max-aspect-ratio: 0.8/1)
+        {
+
+            .photos_line,
+            .photos_line_photo
+            {
+                font-size: 2.8px;
+            }
+        }
+        /* 底部圆角矩形长条样式 */
+        .bottom-bar
+        {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 250px;
+            padding: 10px 10px;
+            background: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 1000; /* 确保显示在最前面 */
+        }
+
+        /* 按钮样式 */
+        .button
+        {
+            width: 80px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        /* 鼠标悬停时的按钮效果 */
+        .button:hover
+        {
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter:blur(15px)
+            transform: scale(1.1);
+        }
+        /* 全屏提示样式 */
+        #mobile-alert
+        {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8); /* 深色背景带透明度 */
+            backdrop-filter: blur(10px); /* 模糊效果 */
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            animation: fadeIn 0.5s ease; /* 动效 */
+        }
+        /* 动效 */
+        @keyframes fadeIn
+        {
+            from
+            {
+                opacity: 0;
+            }
+            to
+            {
+                opacity: 1;
+            }
+        }
+        /* 确认按钮样式 */
+        #mobile-alert button
+        {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        #mobile-alert button:hover
+        {
+            background-color: #0056b3;
+        }
+        /* 鼠标悬停图片的圆角矩形衬底和放大按钮样式 */
+        .photos_line_photo {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            margin: 10px; /* 添加间距 */
+        }
+        
+        .photos_line_photo:hover .hover-overlay {
+            opacity: 1;
+        }
+        
+        .hover-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 15px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .zoom-icon {
+            color: white;
+            font-size: 24px;
+            pointer-events: none; /* 禁用鼠标事件 */
+        }
+        
+        /* 弹窗样式 */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            display: none; /* 初始状态为隐藏 */
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+        
+        .modal.show {
+            display: flex; /* 显示弹窗 */
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            width: 80%;
+            max-width: 800px;
+            display: flex;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .modal-left {
+            flex: 2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .modal-left img {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 15px;
+        }
+        
+        .modal-right {
+            flex: 3;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow-y: auto;
+        }
+        
+        .comment {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+        
+        .comment-info {
+            flex: 1;
+        }
+        
+        .username {
+            font-weight: bold;
+            margin: 0;
+        }
+        
+        .comment-text {
+            margin: 5px 0 0 0;
+        }
+        
+        .comment-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            resize: none;
+        }
+
+        .submit-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        
+        .submit-button:hover {
+            background: #0056b3;
+        }
+        
+        .close-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+            color: #333;
+            cursor: pointer;
+        }
+    </style>
+</head>
+     <!-- 照片区，要是我能做一个自动加入新图的功能就好了 -->
+<body>
+    <div class="photos" style="transform: scale(0.881944);">
+        <div class="photos_line">
+            <div class="photos_line_photo" style="transform: translate(1047.69px, 1566.99px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (1).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(1047.69px, 1566.99px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (2).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(1047.69px, 1566.99px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (3).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(1047.69px, 1566.99px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (4).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(1047.69px, 1566.99px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (5).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(-2368.31px, 1566.99px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (6).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(-2368.31px, 1566.99px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (7).png">
+            </div>
+        </div>
+        <div class="photos_line">
+            <div class="photos_line_photo" style="transform: translate(1047.69px, 1566.99px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (8).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(1047.69px, 1566.99px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (9).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(1047.69px, 1566.99px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (10).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(1047.69px, 1566.99px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (11).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(1047.69px, 1566.99px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (12).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(-2368.31px, 1566.99px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (13).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(-2368.31px, 1566.99px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (14).png">
+            </div>
+        </div>
+        <div class="photos_line">
+            <div class="photos_line_photo" style="transform: translate(1047.69px, 1566.99px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (15).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(1047.69px, 1566.99px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (16).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(1047.69px, 1566.99px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (17).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(1047.69px, 1566.99px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (18).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(1047.69px, 1566.99px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (19).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(-2368.31px, 1566.99px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (20).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(-2368.31px, 1566.99px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (21).png">
+            </div>
+        </div>
+        <div class="photos_line">
+            <div class="photos_line_photo" style="transform: translate(1047.69px, 1566.99px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (22).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(1047.69px, 1566.99px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (23).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(1047.69px, 1566.99px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (24).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(1047.69px, 1566.99px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (25).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(1047.69px, 1566.99px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (26).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(-2368.31px, 1566.99px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (27).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(-2368.31px, 1566.99px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (28).png">
+            </div>
+        </div>
+        <div class="photos_line">
+            <div class="photos_line_photo" style="transform: translate(1047.69px, 1566.99px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (29).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(1047.69px, 1566.99px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (30).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(1047.69px, 1566.99px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (31).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(1047.69px, 1566.99px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (32).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(1047.69px, 1566.99px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (33).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(-2368.31px, 1566.99px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (34).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(-2368.31px, 1566.99px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (35).png">
+            </div>
+        </div>
+               <div class="photos_line">
+            <div class="photos_line_photo" style="transform: translate(1047.69px, -3893.01px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (36).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(1047.69px, -3893.01px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (37).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(1047.69px, -3893.01px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (38).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(1047.69px, -3893.01px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (39).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(1047.69px, -3893.01px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (40).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(-2368.31px, -3893.01px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (41).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(-2368.31px, -3893.01px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (42).png">
+            </div>
+        </div>
+               <div class="photos_line">
+            <div class="photos_line_photo" style="transform: translate(1047.69px, -3893.01px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (43).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(1047.69px, -3893.01px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (44).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(1047.69px, -3893.01px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (45).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(1047.69px, -3893.01px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (46).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(1047.69px, -3893.01px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (47).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(-2368.31px, -3893.01px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (48).png">
+            </div>
+            <div class="photos_line_photo" style="transform: translate(-2368.31px, -3893.01px);">
+                <img src="./SHOOTING STAR _ 相册_files/photo (49).png">
+            </div>
+        </div>
+    </div>
+    <!--提示，如果适配了手机访问就删
+    <div id="mobile-alert">
+        <div>
+            <p style="font-size:30px;">本功能仅限PC端使用</p>
+            <button onclick="hideMobileAlert()">关闭</button>
+        </div>
+    </div>
+    -->
+    <div class="bottom-bar">
+        <button class="button" onclick="window.location.href=&#39;//mikux.fun/&#39;;">主页</button>
+        <button class="button">云盘</button>
+        <button class="button">阅览</button>
+    </div>
+
+<script>
+    const photobox = {
+        container: document.querySelector(".photos"),
+        img_data: [],
+        container_width: 0,
+        container_height: 0,
+        photo_width: 0,
+        photo_height: 0,
+        if_movable: false,
+        mouse_x: 0,
+        mouse_y: 0,
+        standard_width: 1440,
+        scale_nums: 1,
+        inactivityTimer: null, // 不活跃计时器
+        inactivityThreshold: 25000, // 25秒
+        autoScrollInterval: null, // 匀速运动定时器
+        scrollSpeed: 1, // 匀速运动速度（每次移动的像素数）
+        init() {
+            this.resize();
+            window.addEventListener("resize", () => this.resize());
+            window.addEventListener("orientationchange", () => this.resize());
+            // 支持触摸事件
+            this.container.addEventListener("mousedown", (e) => this.startMove(e));
+            this.container.addEventListener("mouseup", () => this.endMove());
+            this.container.addEventListener("mouseleave", () => this.endMove());
+            this.container.addEventListener("mousemove", (e) => this.move(e.clientX, e.clientY));
+            this.container.addEventListener("touchstart", (e) => this.startMove(e.touches[0]));
+            this.container.addEventListener("touchend", () => this.endMove());
+            this.container.addEventListener("touchcancel", () => this.endMove());
+            this.container.addEventListener("touchmove", (e) => this.move(e.touches[0].clientX, e.touches[0].clientY));
+
+            this.resetInactivityTimer();
+        },
+        startMove(event) {
+            this.if_movable = true;
+            this.mouse_x = event.clientX;
+            this.mouse_y = event.clientY;
+            this.resetInactivityTimer(); // 重置不活跃计时器
+        },
+        endMove() {
+            this.if_movable = false;
+            this.resetInactivityTimer(); // 重置不活跃计时器
+        },
+        resize() {
+            let imgs = [...document.querySelectorAll(".photos_line_photo")];
+            this.container_width = this.container.offsetWidth;
+            this.container_height = this.container.offsetHeight;
+            this.photo_width = imgs[0].offsetWidth;
+            this.photo_height = imgs[0].offsetHeight;
+            this.scale_nums = document.body.offsetWidth / this.standard_width;
+            this.container.style.transform = `scale(${this.scale_nums})`;
+            gsap.to(imgs, { transform: `translate(0,0)`, duration: 0 });
+
+            this.img_data = imgs.map((img) => ({
+                node: img,
+                x: img.offsetLeft,
+                y: img.offsetTop,
+                mov_x: 0,
+                mov_y: 0,
+                ani: 0,
+            }));
+        },
+        move(x, y) {
+            if (!this.if_movable) return; // 如果用户没有按住鼠标或触摸，则不滑动
+            let distance_x = (x - this.mouse_x) / this.scale_nums;
+            let distance_y = (y - this.mouse_y) / this.scale_nums;
+
+            this.img_data.forEach((img) => {
+                img.mov_x += distance_x;
+                img.mov_y += distance_y;
+
+                // 边界处理
+                if (img.x + img.mov_x > this.container_width) img.mov_x -= this.container_width;
+                if (img.x + img.mov_x < -this.photo_width) img.mov_x += this.container_width;
+                if (img.y + img.mov_y > this.container_height) img.mov_y -= this.container_height;
+                if (img.y + img.mov_y < -this.photo_height) img.mov_y += this.container_height;
+
+                // 更新位置
+                if (img.ani) img.ani.kill();
+                img.ani = gsap.to(img.node, {
+                    transform: `translate(${img.mov_x}px,${img.mov_y}px)`,
+                    duration: 0.1, // 快速动画
+                });
+            });
+            this.mouse_x = x;
+            this.mouse_y = y;
+            this.resetInactivityTimer(); // 重置不活跃计时器
+        },
+        resetInactivityTimer() {
+            if (this.inactivityTimer) clearTimeout(this.inactivityTimer);
+            if (this.autoScrollInterval) clearInterval(this.autoScrollInterval);
+
+            // 开始新的不活跃计时器
+            this.inactivityTimer = setTimeout(() => {
+                this.startAutoScroll();
+            }, this.inactivityThreshold);
+        },
+        startAutoScroll() {
+            if (this.autoScrollInterval) clearInterval(this.autoScrollInterval); // 避免重复启动
+            this.autoScrollInterval = setInterval(() => {
+                this.uniformScroll();
+            }, 16); // 每帧约16毫秒（60 FPS）
+        },
+        uniformScroll() {
+            let distanceX = this.scrollSpeed; // 每帧X方向的移动距离
+            let distanceY = this.scrollSpeed; // 每帧Y方向的移动距离
+
+            this.img_data.forEach((img) => {
+                img.mov_x += distanceX;
+                img.mov_y += distanceY;
+
+                // 边界处理
+                if (img.x + img.mov_x > this.container_width) img.mov_x -= this.container_width;
+                if (img.x + img.mov_x < -this.photo_width) img.mov_x += this.container_width;
+                if (img.y + img.mov_y > this.container_height) img.mov_y -= this.container_height;
+                if (img.y + img.mov_y < -this.photo_height) img.mov_y += this.container_height;
+
+                // 更新位置
+                if (img.ani) img.ani.kill();
+                img.ani = gsap.to(img.node, {
+                    transform: `translate(${img.mov_x}px,${img.mov_y}px)`,
+                    duration: 0.016, // 与间隔同步
+                    ease: "none", // 匀速动画
+                });
+            });
+        },
+    };
+
+    photobox.init();
+</script>
+
+</body></html>
