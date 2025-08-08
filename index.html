@@ -1,35 +1,30 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
+
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>重返1999 | 相册</title>
-    <script src=".js/gsap.js"></script>
+    <title>infinite scrolling</title>
+    <script src="gsap.js"></script>
     <style>
-        /* ... 全部原样式保留 ... */
-        *{
+        * {
             padding: 0;
             margin: 0;
         }
-        body, html
-        {
-            touch-action: none;
-            overscroll-behavior: none;
-        }
-        img
-        {
+
+        img {
             pointer-events: none;
             user-select: none;
         }
-        div
-        {
+
+        div {
             display: flex;
             justify-content: center;
             align-items: center;
             user-select: none;
         }
-        body
-        {
+
+        body {
             position: relative;
             display: flex;
             justify-content: center;
@@ -39,22 +34,22 @@
             background-color: #171717;
             overflow: hidden;
         }
-        .photos
-        {
+
+        .photos {
             position: absolute;
             flex-direction: column;
             overflow: hidden;
             cursor: pointer;
         }
-        .photos_line
-        {
+
+        .photos_line {
             font-size: 1px;
             height: 342em;
             margin-bottom: 48em;
             flex-shrink: 0;
         }
-        .photos_line_photo
-        {
+
+        .photos_line_photo {
             font-size: 1px;
             width: 234em;
             height: 100%;
@@ -63,366 +58,137 @@
             background-color: #17f700;
             overflow: hidden;
             flex-shrink: 0;
-            position: relative;
-            overflow: hidden;
-            display: inline-block;
-            margin: 10px;
         }
-        .photos_line_photo img
-        {
+
+        .photos_line_photo img {
             height: 100%;
-            transition: 0.2s ease;
+            transition: 0.3s ease;
         }
-        .photos_line_photo:hover img
-        {
+
+        .photos_line_photo:hover img {
             transform: scale(1.2);
-            pointer-events: none;
         }
-        .hover-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            border-radius: 15px;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .photos_line_photo:hover .hover-overlay {
-            opacity: 1;
-        }
-        .zoom-icon {
-            color: white;
-            font-size: 24px;
-            pointer-events: none;
-        }
-        @media screen and (max-aspect-ratio: 1.5/1)
-        {
+
+        @media screen and (max-aspect-ratio: 1.5/1) {
+
             .photos_line,
-            .photos_line_photo
-            {
+            .photos_line_photo {
                 font-size: 2px;
             }
         }
-        @media screen and (max-aspect-ratio: 0.8/1)
-        {
+
+        @media screen and (max-aspect-ratio: 0.8/1) {
+
             .photos_line,
-            .photos_line_photo
-            {
+            .photos_line_photo {
                 font-size: 2.8px;
             }
         }
-        .bottom-bar
-        {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100%;
-            max-width: 250px;
-            padding: 10px 10px;
-            background: rgba(255, 255, 255, 0.3);
-            backdrop-filter: blur(15px);
-            border-radius: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            z-index: 1000;
-        }
-        .button
-        {
-            width: 80px;
-            height: 40px;
-            background: rgba(255, 255, 255, 0.3);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .button:hover
-        {
-            background: rgba(255, 255, 255, 0.5);
-            backdrop-filter:blur(15px)
-            transform: scale(1.1);
-        }
-        #mobile-alert
-        {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(10px);
-            color: white;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            animation: fadeIn 0.5s ease;
-        }
-        @keyframes fadeIn
-        {
-            from
-            {
-                opacity: 0;
-            }
-            to
-            {
-                opacity: 1;
-            }
-        }
-        #mobile-alert button
-        {
-            margin-top: 20px;
-            padding: 10px 20px;
-            font-size: 16px;
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-        #mobile-alert button:hover
-        {
-            background-color: #0056b3;
-        }
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(10px);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 10000;
-        }
-        .modal.show {
-            display: flex;
-        }
-        .modal-content {
-            background: white;
-            border-radius: 20px;
-            width: 80%;
-            max-width: 800px;
-            display: flex;
-            overflow: hidden;
-            position: relative;
-        }
-        .modal-left {
-            flex: 2;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: #f5f5f5;
-            padding: 20px;
-        }
-        .modal-left img {
-            max-width: 100%;
-            max-height: 100%;
-            border-radius: 15px;
-        }
-        .modal-right {
-            flex: 3;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            overflow-y: auto;
-        }
-        .comment {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-        .avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-        }
-        .comment-info {
-            flex: 1;
-        }
-        .username {
-            font-weight: bold;
-            margin: 0;
-        }
-        .comment-text {
-            margin: 5px 0 0 0;
-        }
-        .comment-input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            resize: none;
-        }
-        .submit-button {
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background 0.3s ease;
-        }
-        .submit-button:hover {
-            background: #0056b3;
-        }
-        .close-button {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            font-size: 24px;
-            color: #333;
-            cursor: pointer;
-        }
+
     </style>
 </head>
+
 <body>
-    <div class="photos"></div>
-    <!--提示，如果适配了手机访问就删
-    <div id="mobile-alert">
-        <div>
-            <p style="font-size:30px;">本功能仅限PC端使用</p>
-            <button onclick="hideMobileAlert()">关闭</button>
+    <div class="photos">
+        <div class="photos_line">
+            <div class="photos_line_photo">
+                <img src="photos/photo (1).png" />
+            </div>
+            <div class="photos_line_photo">
+                <img src="photos/photo (2).png" />
+            </div>
+            <div class="photos_line_photo">
+                <img src="photos/photo (3).png" />
+            </div>
+            <div class="photos_line_photo">
+                <img src="photos/photo (4).png" />
+            </div>
+            <div class="photos_line_photo">
+                <img src="photos/photo (5).png" />
+            </div>
+            <div class="photos_line_photo">
+                <img src="photos/photo (6).png" />
+            </div>
+            <div class="photos_line_photo">
+                <img src="photos/photo (7).png" />
+            </div>
+        </div>
+        <div class="photos_line">
+            <div class="photos_line_photo">
+                <img src="photos/photo (8).png" />
+            </div>
+            <div class="photos_line_photo">
+                <img src="photos/photo (9).png" />
+            </div>
+            <div class="photos_line_photo">
+                <img src="photos/photo (10).png" />
+            </div>
+            <div class="photos_line_photo">
+                <img src="photos/photo (11).png" />
+            </div>
+            <div class="photos_line_photo">
+                <img src="photos/photo (12).png" />
+            </div>
+            <div class="photos_line_photo">
+                <img src="photos/photo (13).png" />
+            </div>
+            <div class="photos_line_photo">
+                <img src="photos/photo (14).png" />
+            </div>
+        </div>
+        <div class="photos_line">
+            <div class="photos_line_photo">
+                <img src="photos/photo (15).png" />
+            </div>
+            <div class="photos_line_photo">
+                <img src="photos/photo (16).png" />
+            </div>
+            <div class="photos_line_photo">
+                <img src="photos/photo (17).png" />
+            </div>
+            <div class="photos_line_photo">
+                <img src="photos/photo (18).png" />
+            </div>
+            <div class="photos_line_photo">
+                <img src="photos/photo (19).png" />
+            </div>
+            <div class="photos_line_photo">
+                <img src="photos/photo (20).png" />
+            </div>
+            <div class="photos_line_photo">
+                <img src="photos/photo (21).png" />
+            </div>
+        </div>
+        <div class="photos_line">
+            <div class="photos_line_photo">
+                <img src="photos/photo (22).png" />
+            </div>
+            <div class="photos_line_photo">
+                <img src="photos/photo (23).png" />
+            </div>
+            <div class="photos_line_photo">
+                <img src="photos/photo (24).png" />
+            </div>
+            <div class="photos_line_photo">
+                <img src="photos/photo (25).png" />
+            </div>
+            <div class="photos_line_photo">
+                <img src="photos/photo (26).png" />
+            </div>
+            <div class="photos_line_photo">
+                <img src="photos/photo (27).png" />
+            </div>
+            <div class="photos_line_photo">
+                <img src="photos/photo (28).png" />
+            </div>
         </div>
     </div>
-    -->
-    <div class="bottom-bar">
-        <button class="button" onclick="window.location.href='//mikux.fun/';">主页</button>
-        <button class="button">部署</button>
-        <button class="button">下载</button>
-    </div>
+</body>
 <script>
-    // 动态加载 all.json 并渲染照片
-    async function loadPhotos() {
-        const response = await fetch('all.json');
-        const photoList = await response.json();
-        const photosContainer = document.querySelector('.photos');
-        photosContainer.innerHTML = '';
-        // 每行最多的图片数由屏幕宽度决定
-        const photoWidth = 234 * (parseFloat(getComputedStyle(document.documentElement).fontSize) || 1); // em转换像素
-        const screenWidth = window.innerWidth;
-        const photosPerLine = Math.max(1, Math.floor(screenWidth / (photoWidth + 36))); // 36em为margin
-
-        for (let i = 0; i < photoList.length; i += photosPerLine) {
-            // 检查本组图片是否全部可加载
-            const group = photoList.slice(i, i + photosPerLine);
-            const groupPromises = group.map(src => checkImage('./v/' + src));
-            // await所有图片可用，否则跳过该组
-            const results = await Promise.all(groupPromises);
-            if (results.some(r => !r)) continue; // 有任意一张加载失败则整行不显示
-
-            const lineDiv = document.createElement('div');
-            lineDiv.className = 'photos_line';
-            for (let j = 0; j < group.length; j++) {
-                const photoDiv = document.createElement('div');
-                photoDiv.className = 'photos_line_photo';
-                const img = document.createElement('img');
-                img.src = './v/' + group[j];
-                photoDiv.appendChild(img);
-                // 放大层
-                const overlay = document.createElement('div');
-                overlay.className = 'hover-overlay';
-                const zoomIcon = document.createElement('span');
-                zoomIcon.className = 'zoom-icon';
-                zoomIcon.textContent = '🔍';
-                overlay.appendChild(zoomIcon);
-                photoDiv.appendChild(overlay);
-                lineDiv.appendChild(photoDiv);
-            }
-            photosContainer.appendChild(lineDiv);
-        }
-    }
-
-    // 检查图片能否加载
-    function checkImage(src) {
-        return new Promise(resolve => {
-            const img = new window.Image();
-            img.onload = () => resolve(true);
-            img.onerror = () => resolve(false);
-            img.src = src;
-        });
-    }
-
-    // 无限横向滚动+拖动
+    // JIEJOE produce
+    // b站主页：https://space.bilibili.com/3546390319860710
     const photobox = {
-        container: null,
-        scrollX: 0,
-        startX: 0,
-        dragging: false,
-        autoScrollInterval: null,
-        init() {
-            this.container = document.querySelector('.photos');
-            if (!this.container) return;
-            this.container.addEventListener('mousedown', this.onDown.bind(this));
-            this.container.addEventListener('touchstart', this.onDown.bind(this));
-            window.addEventListener('mousemove', this.onMove.bind(this));
-            window.addEventListener('touchmove', this.onMove.bind(this), {passive: false});
-            window.addEventListener('mouseup', this.onUp.bind(this));
-            window.addEventListener('touchend', this.onUp.bind(this));
-            this.startAutoScroll();
-        },
-        onDown(e) {
-            this.dragging = true;
-            this.startX = e.touches ? e.touches[0].clientX : e.clientX;
-            if (this.autoScrollInterval) clearInterval(this.autoScrollInterval);
-        },
-        onMove(e) {
-            if (!this.dragging) return;
-            e.preventDefault();
-            const x = e.touches ? e.touches[0].clientX : e.clientX;
-            let deltaX = x - this.startX;
-            this.startX = x;
-            this.scrollX -= deltaX;
-            this.updateScroll();
-        },
-        onUp() {
-            this.dragging = false;
-            this.startAutoScroll();
-        },
-        updateScroll() {
-            // 无限横向滚动
-            const width = this.container.scrollWidth;
-            // 保证scrollX始终在0-width之间
-            this.scrollX = ((this.scrollX % width) + width) % width;
-            this.container.scrollLeft = this.scrollX;
-        },
-        startAutoScroll() {
-            if (this.autoScrollInterval) clearInterval(this.autoScrollInterval);
-            this.autoScrollInterval = setInterval(() => {
-                this.scrollX += 1;
-                this.updateScroll();
-            }, 16);
-        }
-    };
-
-    async function main() {
-        await loadPhotos();
-        photobox.init();
-    }
-    main();
-
-    // 当窗口大小变化时重新渲染
-    window.addEventListener('resize', () => main());
-
-    // photobox控制图片移动功能
-    const photobox = {
-        container: null,
+        container: document.querySelector(".photos"),
         img_data: [],
         container_width: 0,
         container_height: 0,
@@ -433,114 +199,88 @@
         mouse_y: 0,
         standard_width: 1440,
         scale_nums: 1,
-        inactivityTimer: null,
-        inactivityThreshold: 25000,
-        autoScrollInterval: null,
-        scrollSpeed: 1,
         init() {
-            this.container = document.querySelector(".photos");
-            if (!this.container || this.container.querySelectorAll(".photos_line_photo").length === 0) return;
             this.resize();
-            window.addEventListener("resize", () => this.resize());
-            window.addEventListener("orientationchange", () => this.resize());
-            this.container.addEventListener("mousedown", (e) => this.startMove(e));
-            this.container.addEventListener("mouseup", () => this.endMove());
-            this.container.addEventListener("mouseleave", () => this.endMove());
-            this.container.addEventListener("mousemove", (e) => this.move(e.clientX, e.clientY));
-            this.container.addEventListener("touchstart", (e) => this.startMove(e.touches[0]));
-            this.container.addEventListener("touchend", () => this.endMove());
-            this.container.addEventListener("touchcancel", () => this.endMove());
-            this.container.addEventListener("touchmove", (e) => this.move(e.touches[0].clientX, e.touches[0].clientY));
-            this.resetInactivityTimer();
-        },
-        startMove(event) {
-            this.if_movable = true;
-            this.mouse_x = event.clientX;
-            this.mouse_y = event.clientY;
-            this.resetInactivityTimer();
-        },
-        endMove() {
-            this.if_movable = false;
-            this.resetInactivityTimer();
+            window.addEventListener("resize", () => {
+                this.resize();
+            });
+            this.container.addEventListener("mousedown", () => {
+                this.if_movable = true;
+                this.mouse_x = event.clientX;
+                this.mouse_y = event.clientY;
+            });
+            this.container.addEventListener("mouseup", () => {
+                this.if_movable = false;
+            });
+            this.container.addEventListener("mouseleave", () => {
+                this.if_movable = false;
+            });
+            this.container.addEventListener("mousemove", () => {
+                this.move(event.clientX, event.clientY);
+            });
         },
         resize() {
             let imgs = [...document.querySelectorAll(".photos_line_photo")];
-            if (imgs.length === 0) return;
             this.container_width = this.container.offsetWidth;
             this.container_height = this.container.offsetHeight;
             this.photo_width = imgs[0].offsetWidth;
             this.photo_height = imgs[0].offsetHeight;
             this.scale_nums = document.body.offsetWidth / this.standard_width;
             this.container.style.transform = `scale(${this.scale_nums})`;
-            gsap.to(imgs, { transform: `translate(0,0)`, duration: 0 });
-            this.img_data = imgs.map((img) => ({
-                node: img,
-                x: img.offsetLeft,
-                y: img.offsetTop,
-                mov_x: 0,
-                mov_y: 0,
-                ani: 0,
-            }));
+            gsap.to(imgs, {
+                transform: `translate(0,0)`,
+                duration: 0,
+                ease: 'power4.out'
+            });
+            this.img_data = [];
+            imgs.forEach(img => {
+                this.img_data.push({
+                    node: img,
+                    x: img.offsetLeft,
+                    y: img.offsetTop,
+                    mov_x: 0,
+                    mov_y: 0,
+                    ani: 0
+                });
+            });
         },
         move(x, y) {
-            if (!this.if_movable) return;
+            if (!this.if_movable) return 0;
             let distance_x = (x - this.mouse_x) / this.scale_nums;
             let distance_y = (y - this.mouse_y) / this.scale_nums;
             this.img_data.forEach((img) => {
+                let duration = 1;
                 img.mov_x += distance_x;
+                if (img.x + img.mov_x > this.container_width) {
+                    img.mov_x -= this.container_width;
+                    duration = 0;
+                }
+                if (img.x + img.mov_x < -this.photo_width) {
+                    img.mov_x += this.container_width;
+                    duration = 0;
+                }
                 img.mov_y += distance_y;
-                if (img.x + img.mov_x > this.container_width) img.mov_x -= this.container_width;
-                if (img.x + img.mov_x < -this.photo_width) img.mov_x += this.container_width;
-                if (img.y + img.mov_y > this.container_height) img.mov_y -= this.container_height;
-                if (img.y + img.mov_y < -this.photo_height) img.mov_y += this.container_height;
+                if (img.y + img.mov_y > this.container_height) {
+                    img.mov_y -= this.container_height;
+                    duration = 0;
+                }
+                if (img.y + img.mov_y < -this.photo_height) {
+                    img.mov_y += this.container_height;
+                    duration = 0;
+                }
                 if (img.ani) img.ani.kill();
                 img.ani = gsap.to(img.node, {
                     transform: `translate(${img.mov_x}px,${img.mov_y}px)`,
-                    duration: 0.1,
+                    duration: duration,
+                    ease: 'power4.out'
                 });
             });
             this.mouse_x = x;
             this.mouse_y = y;
-            this.resetInactivityTimer();
-        },
-        resetInactivityTimer() {
-            if (this.inactivityTimer) clearTimeout(this.inactivityTimer);
-            if (this.autoScrollInterval) clearInterval(this.autoScrollInterval);
-            this.inactivityTimer = setTimeout(() => {
-                this.startAutoScroll();
-            }, this.inactivityThreshold);
-        },
-        startAutoScroll() {
-            if (this.autoScrollInterval) clearInterval(this.autoScrollInterval);
-            this.autoScrollInterval = setInterval(() => {
-                this.uniformScroll();
-            }, 16);
-        },
-        uniformScroll() {
-            let distanceX = this.scrollSpeed;
-            let distanceY = this.scrollSpeed;
-            this.img_data.forEach((img) => {
-                img.mov_x += distanceX;
-                img.mov_y += distanceY;
-                if (img.x + img.mov_x > this.container_width) img.mov_x -= this.container_width;
-                if (img.x + img.mov_x < -this.photo_width) img.mov_x += this.container_width;
-                if (img.y + img.mov_y > this.container_height) img.mov_y -= this.container_height;
-                if (img.y + img.mov_y < -this.photo_height) img.mov_y += this.container_height;
-                if (img.ani) img.ani.kill();
-                img.ani = gsap.to(img.node, {
-                    transform: `translate(${img.mov_x}px,${img.mov_y}px)`,
-                    duration: 0.016,
-                    ease: "none",
-                });
-            });
-        },
+        }
     };
-
-    async function main() {
-        await loadPhotos();
-        photobox.init();
-    }
-    main();
+    photobox.init();
 </script>
-</body>
+
 </html>
+
