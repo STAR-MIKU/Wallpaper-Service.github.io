@@ -641,5 +641,40 @@
 
     photobox.init();
 </script>
-
+<script>    
+// 动态加载 all.json 并渲染照片    
+async function loadPhotos() {        
+const response = await fetch('all.json');        
+const photoList = await response.json();
+        const photosContainer = document.querySelector('.photos');        
+photosContainer.innerHTML = ''; // 清空容器
+        // 假设每行7张图片        
+const photosPerLine = 7;        
+for (let i = 0; i < photoList.length; i += photosPerLine) {            
+const lineDiv = document.createElement('div');            
+lineDiv.className = 'photos_line';
+            for (let j = i; j < i + photosPerLine && j < photoList.length; j++) {                
+const photoDiv = document.createElement('div');                
+photoDiv.className = 'photos_line_photo';
+                // 这里假设图片路径直接是文件名，实际路径请根据你的 repo 调整                
+const img = document.createElement('img');                
+img.src = './SHOOTING STAR _ 相册_files/' + photoList[j];                
+photoDiv.appendChild(img);
+                lineDiv.appendChild(photoDiv);            
+}
+            photosContainer.appendChild(lineDiv);        
+}    
+}
+    loadPhotos();
+    // photobox.init() 依赖动态生成的 DOM    
+// 所以放在loadPhotos完成后调用    
+async function initPhotoBox() {        
+await loadPhotos();        
+photobox.init();    
+}
+    // photobox对象需稍作调整，建议将init移到loadPhotos之后    
+// 或在loadPhotos()最后调用 photobox.init()    
+// 这里只是示例，完整 photobox 对象见原代码
+    // photobox 定义略（保留你的原 photobox 代码即可）
+</script>
 </body></html>
