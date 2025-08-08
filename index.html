@@ -314,19 +314,28 @@
         const photoList = await response.json();
         const photosContainer = document.querySelector('.photos');
         photosContainer.innerHTML = '';
-        // 每行7张图片
-        const photosPerLine = 7;
+        // 每行最多的图片数由屏幕宽度决定
+        const photoWidth = 234 * (parseFloat(getComputedStyle(document.documentElement).fontSize) || 1); // em转换像素
+        const screenWidth = window.innerWidth;
+        const photosPerLine = Math.max(1, Math.floor(screenWidth / (photoWidth + 36))); // 36em为margin
+
         for (let i = 0; i < photoList.length; i += photosPerLine) {
+            // 检查本组图片是否全部可加载
+            const group = photoList.slice(i, i + photosPerLine);
+            const groupPromises = group.map(src => checkImage('./v/' + src));
+            // await所有图片可用，否则跳过该组
+            const results = await Promise.all(groupPromises);
+            if (results.some(r => !r)) continue; // 有任意一张加载失败则整行不显示
+
             const lineDiv = document.createElement('div');
             lineDiv.className = 'photos_line';
-            for (let j = i; j < i + photosPerLine && j < photoList.length; j++) {
+            for (let j = 0; j < group.length; j++) {
                 const photoDiv = document.createElement('div');
                 photoDiv.className = 'photos_line_photo';
-                // 这里假设图片路径直接是文件名，实际路径请根据你的 repo 调整
                 const img = document.createElement('img');
-                img.src = './v/' + photoList[j];
+                img.src = './v/' + group[j];
                 photoDiv.appendChild(img);
-                // 可选：添加悬浮放大层
+                // 放大层
                 const overlay = document.createElement('div');
                 overlay.className = 'hover-overlay';
                 const zoomIcon = document.createElement('span');
@@ -339,6 +348,77 @@
             photosContainer.appendChild(lineDiv);
         }
     }
+
+    // 检查图片能否加载
+    function checkImage(src) {
+        return new Promise(resolve => {
+            const img = new window.Image();
+            img.onload = () => resolve(true);
+            img.onerror = () => resolve(false);
+            img.src = src;
+        });
+    }
+
+    // 无限横向滚动+拖动
+    const photobox = {
+        container: null,
+        scrollX: 0,
+        startX: 0,
+        dragging: false,
+        autoScrollInterval: null,
+        init() {
+            this.container = document.querySelector('.photos');
+            if (!this.container) return;
+            this.container.addEventListener('mousedown', this.onDown.bind(this));
+            this.container.addEventListener('touchstart', this.onDown.bind(this));
+            window.addEventListener('mousemove', this.onMove.bind(this));
+            window.addEventListener('touchmove', this.onMove.bind(this), {passive: false});
+            window.addEventListener('mouseup', this.onUp.bind(this));
+            window.addEventListener('touchend', this.onUp.bind(this));
+            this.startAutoScroll();
+        },
+        onDown(e) {
+            this.dragging = true;
+            this.startX = e.touches ? e.touches[0].clientX : e.clientX;
+            if (this.autoScrollInterval) clearInterval(this.autoScrollInterval);
+        },
+        onMove(e) {
+            if (!this.dragging) return;
+            e.preventDefault();
+            const x = e.touches ? e.touches[0].clientX : e.clientX;
+            let deltaX = x - this.startX;
+            this.startX = x;
+            this.scrollX -= deltaX;
+            this.updateScroll();
+        },
+        onUp() {
+            this.dragging = false;
+            this.startAutoScroll();
+        },
+        updateScroll() {
+            // 无限横向滚动
+            const width = this.container.scrollWidth;
+            // 保证scrollX始终在0-width之间
+            this.scrollX = ((this.scrollX % width) + width) % width;
+            this.container.scrollLeft = this.scrollX;
+        },
+        startAutoScroll() {
+            if (this.autoScrollInterval) clearInterval(this.autoScrollInterval);
+            this.autoScrollInterval = setInterval(() => {
+                this.scrollX += 1;
+                this.updateScroll();
+            }, 16);
+        }
+    };
+
+    async function main() {
+        await loadPhotos();
+        photobox.init();
+    }
+    main();
+
+    // 当窗口大小变化时重新渲染
+    window.addEventListener('resize', () => main());
 
     // photobox控制图片移动功能
     const photobox = {
