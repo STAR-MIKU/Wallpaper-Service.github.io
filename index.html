@@ -1,9 +1,16 @@
 <img id="wallpaper" src="">
 <script>
-fetch('/v.json')
+fetch('/all.json')
   .then(res => res.json())
-  .then(list => {
-    const img = list[Math.floor(Math.random() * list.length)];
-    document.getElementById('wallpaper').src = '//ws.aicya.cc/v/' + img;
-  });
+  .then(list => {    
+const img = list[Math.floor(Math.random() * list.length)];    
+// 判断文件夹，V-开头放在 v 文件夹，H-开头放在 h 文件夹    
+let folder = '';    
+if (img.startsWith('V-')) {      
+folder = 'v';    
+} else if (img.startsWith('H-')) {      
+folder = 'h';    
+}    
+document.getElementById('wallpaper').src = `//ws.aicya.cc/${folder}/${img}`;  
+});
 </script>
